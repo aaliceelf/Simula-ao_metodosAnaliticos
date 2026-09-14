@@ -1,6 +1,6 @@
 class Gerador:
      
-    def __init__(self, seed=12345, a=2023, c=8, M=2*32, n=100000):
+    def __init__(self, seed=12345, a=2023, c=8, M=2**32, n=100000):
         self.a = a
         self.c = c
         self.M = M
