@@ -15,7 +15,7 @@ class Gerador:
             self.primeiro = False
             return self.previous / self.M
 
-        self.previous = (self.a self.previous + self.c) % self.M
+        self.previous = (self.a * self.previous + self.c) % self.M
         return self.previous / self.M
 
     def proximo(self):
