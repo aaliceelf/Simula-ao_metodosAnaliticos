@@ -1,10 +1,10 @@
 import heapq
-import Evento
+from Evento import Evento
 
 class Escalonador:
     """Fila de prioridade mínima: o próximo() sempre retorna o evento com menor tempo."""
 
-    def init(self):
+    def __init__(self):
         self._eventos = []
 
     def agendar(self, evento: Evento) -> None:
