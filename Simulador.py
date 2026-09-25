@@ -5,71 +5,65 @@ from Gerador import Gerador
 
 
 class Simulador:
-    def __init__(self, fila1: Fila, fila2: Fila, gerador: Gerador, primeira_chegada=3.0):
-        self.fila1 = fila1
-        self.fila2 = fila2
+    def __init__(self, filas: dict, gerador: Gerador, fila_id_primeira_chegada, primeira_chegada=3.0):
+        self.filas = filas  # dict {id: Fila}
         self.gerador = gerador
         self.escalonador = Escalonador()
-        self.relogio = 0.0  
+        self.relogio = 0.0
 
-        self.escalonador.agendar(Evento("chegada", primeira_chegada, fila_id=1))
+        self.escalonador.agendar(Evento("chegada", primeira_chegada, fila_id=fila_id_primeira_chegada))
 
     def acumula_tempo(self, ev: Evento) -> None:
-        """Contabiliza o tempo decorrido no estado ATUAL das duas filas até o instante do evento."""
+        """Contabiliza o tempo decorrido no estado ATUAL de TODAS as filas até o instante do evento."""
         delta = ev.tempo - self.relogio
-        self.fila1.times[self.fila1.Status()] += delta
-        self.fila2.times[self.fila2.Status()] += delta
+        for fila in self.filas.values():
+            fila.times[fila.Status()] += delta
         self.relogio = ev.tempo
 
+    def _agenda_servico(self, fila: Fila) -> None:
+        """Sorteia o tempo de atendimento e agenda o evento de SAÍDA (fim de serviço) da fila."""
+        t_servico = self.gerador.converte(fila.min_service, fila.max_service)
+        if t_servico is not None:
+            self.escalonador.agendar(Evento("saida", self.relogio + t_servico, fila_id=fila.id))
+
+    def _recebe_cliente(self, fila: Fila) -> None:
+        """Um cliente tenta entrar na fila — seja por chegada externa, seja roteado de outra fila."""
+        if fila.Status() < fila.Capacity():
+            fila.In()
+            if fila.Status() <= fila.Servers():
+                self._agenda_servico(fila)
+        else:
+            fila.Loss()
+
     def chegada(self, ev: Evento) -> None:
-        """Chegada externa de um cliente na Fila1."""
+        """Chegada externa de um cliente na fila ev.fila_id."""
         self.acumula_tempo(ev)
+        fila = self.filas[ev.fila_id]
 
-        if self.fila1.Status() < self.fila1.Capacity():
-            self.fila1.In()
+        self._recebe_cliente(fila)
 
-            if self.fila1.Status() <= self.fila1.Servers():
-                t_servico = self.gerador.converte(self.fila1.min_service, self.fila1.max_service)
-                if t_servico is not None:
-                    self.escalonador.agendar(Evento("passagem", self.relogio + t_servico, fila_id=1))
-        else:
-            self.fila1.Loss()
-
-        intervalo = self.gerador.converte(self.fila1.min_arrival, self.fila1.max_arrival)
-        if intervalo is not None:
-            self.escalonador.agendar(Evento("chegada", self.relogio + intervalo, fila_id=1))
-
-    def passagem(self, ev: Evento) -> None:
-        """Cliente termina o atendimento na Fila1 e passa para a Fila2."""
-        self.acumula_tempo(ev)
-
-        self.fila1.Out()
-
-        if self.fila1.Status() >= self.fila1.Servers():
-            t_servico = self.gerador.converte(self.fila1.min_service, self.fila1.max_service)
-            if t_servico is not None:
-                self.escalonador.agendar(Evento("passagem", self.relogio + t_servico, fila_id=1))
-
-        if self.fila2.Status() < self.fila2.Capacity():
-            self.fila2.In()
-
-            if self.fila2.Status() <= self.fila2.Servers():
-                t_servico = self.gerador.converte(self.fila2.min_service, self.fila2.max_service)
-                if t_servico is not None:
-                    self.escalonador.agendar(Evento("saida", self.relogio + t_servico, fila_id=2))
-        else:
-            self.fila2.Loss()
+        if fila.tem_chegada_externa():
+            intervalo = self.gerador.converte(fila.min_arrival, fila.max_arrival)
+            if intervalo is not None:
+                self.escalonador.agendar(Evento("chegada", self.relogio + intervalo, fila_id=fila.id))
 
     def saida(self, ev: Evento) -> None:
-        """Cliente termina o atendimento na Fila2 e sai do sistema."""
+        """Cliente termina o atendimento na fila ev.fila_id. Se havia alguém esperando, o próximo
+        entra em serviço; em seguida sorteia-se o roteamento: para qual fila o cliente vai (ou se
+        sai do sistema)."""
         self.acumula_tempo(ev)
+        fila = self.filas[ev.fila_id]
 
-        self.fila2.Out()
+        fila.Out()
 
-        if self.fila2.Status() >= self.fila2.Servers():
-            t_servico = self.gerador.converte(self.fila2.min_service, self.fila2.max_service)
-            if t_servico is not None:
-                self.escalonador.agendar(Evento("saida", self.relogio + t_servico, fila_id=2))
+        if fila.Status() >= fila.Servers():
+            self._agenda_servico(fila)
+
+        r = self.gerador.proximo()
+        if r is not None:
+            destino_id = fila.sorteia_destino(r)
+            if destino_id is not None:
+                self._recebe_cliente(self.filas[destino_id])
 
     def simula(self) -> dict:
         while not self.escalonador.vazio():
@@ -79,16 +73,18 @@ class Simulador:
                 self.chegada(ev)
             elif ev.tipo == "saida":
                 self.saida(ev)
-            elif ev.tipo == "passagem":
-                self.passagem(ev)
 
         return self._resultado()
 
     def _resultado(self) -> dict:
-        resultado = {"tempo_global": self.relogio, "aleatorios_usados": self.gerador.usados}
+        resultado = {
+            "tempo_global": self.relogio,
+            "aleatorios_usados": self.gerador.usados,
+            "filas": {},
+        }
 
-        for nome, fila in (("fila1", self.fila1), ("fila2", self.fila2)):
-            resultado[nome] = {
+        for fila_id, fila in self.filas.items():
+            resultado["filas"][fila_id] = {
                 "tempo_acumulado_por_estado": list(fila.times),
                 "probabilidades": [t / self.relogio for t in fila.times],
                 "perdas": fila.loss,

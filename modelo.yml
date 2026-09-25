@@ -1,0 +1,34 @@
+chegada_inicial:
+  fila: 1
+  tempo: 2.0
+
+aleatorios:
+  seed: 12345
+  quantidade: 100000
+
+filas:
+  1:
+    servidores: 1
+    capacidade: 3          # G/G/1 — sem limite explícito no enunciado, ajustar se necessário
+    atendimento: [1, 2]
+    chegada: [2, 4]
+    roteamento:
+      - {probabilidade: 0.2, destino: 2}
+      - {probabilidade: 0.8, destino: 3}
+
+  2:
+    servidores: 2
+    capacidade: 5           # G/G/2/5
+    atendimento: [4, 8]
+    roteamento:
+      - {probabilidade: 0.5, destino: 2}    # feedback: volta pra própria fila 2
+      - {probabilidade: 0.3, destino: 1}    # roteia de volta pra fila 1
+      - {probabilidade: 0.2, destino: null} # sai do sistema
+
+  3:
+    servidores: 2
+    capacidade: 10          # G/G/2/10
+    atendimento: [5, 15]
+    roteamento:
+      - {probabilidade: 0.3, destino: 3}    # feedback: volta pra própria fila 3
+      - {probabilidade: 0.7, destino: null} # sai do sistema

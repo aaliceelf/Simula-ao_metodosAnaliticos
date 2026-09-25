@@ -1,13 +1,13 @@
 class Gerador:
-     
+
     def __init__(self, seed=12345, a=2023, c=8, M=2**32, n=100000):
         self.a = a
         self.c = c
         self.M = M
-        self.n = n             
+        self.n = n
         self.previous = seed
-        self.primeiro = True   
-        self.usados = 0         
+        self.primeiro = True
+        self.usados = 0
 
     def _next_random(self) -> float:
         """Gera o próximo número em [0,1) via LCG (equivalente a NextRandom())."""
@@ -34,6 +34,3 @@ class Gerador:
             return None
 
         return minimo + u * (maximo - minimo)
-
-
-

@@ -1,10 +1,10 @@
 class Evento:
 
     def __init__(self, tipo, tempo, fila_id=None, servidor_idx=None):
-        self.tipo = tipo              
-        self.tempo = tempo           
-        self.fila_id = fila_id        
-        self.servidor_idx = servidor_idx  
+        self.tipo = tipo
+        self.tempo = tempo
+        self.fila_id = fila_id
+        self.servidor_idx = servidor_idx
 
     def __lt__(self, other):
         """Sobrecarga equivalente ao compareTo: ordena pelo tempo do evento."""
