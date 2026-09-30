@@ -17,7 +17,7 @@ class Simulador:
         """Contabiliza o tempo decorrido no estado ATUAL de TODAS as filas até o instante do evento."""
         delta = ev.tempo - self.relogio
         for fila in self.filas.values():
-            fila.times[fila.Status()] += delta
+            fila.Acumula(delta)
         self.relogio = ev.tempo
 
     def _agenda_servico(self, fila: Fila) -> None:

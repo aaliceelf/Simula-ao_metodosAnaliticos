@@ -19,7 +19,14 @@ class Fila:
 
         self.customers = 0
         self.loss = 0
-        self.times = [0.0] * (capacity + 1)
+
+        # Para capacidade finita, já cria uma posição por estado (0..K).
+        # Para capacidade "infinita" (MAX_INT), a lista começa com só o estado 0 e cresce
+        # conforme a fila atinge estados maiores (não dá pra alocar MAX_INT posições).
+        if capacity < 1_000_000:
+            self.times = [0.0] * (capacity + 1)
+        else:
+            self.times = [0.0]
 
     def Status(self) -> int:
         """Retorna quantos clientes estão na fila no momento."""
@@ -58,3 +65,9 @@ class Fila:
             if r < acumulado:
                 return destino
         return self.routing[-1][1]  # salvaguarda para erro de arredondamento (r muito perto de 1.0)
+
+    def Acumula(self, delta: float) -> None:
+        """Soma delta ao tempo acumulado do estado atual, aumentando a lista se for um estado novo."""
+        while len(self.times) <= self.customers:
+            self.times.append(0.0)
+        self.times[self.customers] += delta

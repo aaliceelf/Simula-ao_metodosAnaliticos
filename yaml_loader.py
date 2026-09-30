@@ -1,3 +1,4 @@
+import sys
 import yaml
 from Fila import Fila
 from Gerador import Gerador
@@ -14,6 +15,10 @@ def carrega_modelo(caminho_yaml):
     for fila_id_bruto, dados in config["filas"].items():
         fila_id = int(fila_id_bruto)
 
+        capacidade = dados.get("capacidade")
+        if capacidade is None:
+            capacidade = sys.maxsize  # capacidade infinita (MAX_INT), como orientado pelo professor
+
         atendimento = dados["atendimento"]
         chegada = dados.get("chegada")  # None se a fila não recebe chegada externa
 
@@ -23,7 +28,7 @@ def carrega_modelo(caminho_yaml):
         filas[fila_id] = Fila(
             id=fila_id,
             servers=dados["servidores"],
-            capacity=dados["capacidade"],
+            capacity=capacidade,
             min_service=atendimento[0],
             max_service=atendimento[1],
             min_arrival=chegada[0] if chegada else None,

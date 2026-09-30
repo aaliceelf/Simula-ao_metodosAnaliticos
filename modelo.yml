@@ -9,7 +9,7 @@ aleatorios:
 filas:
   1:
     servidores: 1
-    capacidade: 3          # G/G/1 — sem limite explícito no enunciado, ajustar se necessário
+    # sem 'capacidade' = infinita (G/G/1)
     atendimento: [1, 2]
     chegada: [2, 4]
     roteamento:

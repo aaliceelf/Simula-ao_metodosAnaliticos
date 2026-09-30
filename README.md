@@ -71,3 +71,15 @@ As probabilidades de cada fila em `roteamento` devem somar 1.0.
 Para cada fila: número de clientes perdidos, tempo acumulado em cada estado e a probabilidade
 de cada estado (tempo acumulado / tempo global). Também imprime o tempo global da simulação e
 a quantidade de aleatórios efetivamente usados (sempre 100.000, salvo se você reduzir `quantidade`).
+
+## Capacidade infinita
+
+Uma fila G/G/1 (sem K no diagrama) tem capacidade infinita. No `.yml`, basta **omitir** o campo
+`capacidade` — o `yaml_loader.py` usa `sys.maxsize` (o MAX_INT do Python). Como não dá para alocar
+uma lista de tamanho MAX_INT, a lista de tempos por estado dessas filas cresce conforme a fila
+atinge estados maiores.
+
+## Ordem do sorteio de roteamento
+
+A ordem dos destinos na lista `roteamento` de cada fila é fixa: filas em ordem crescente de índice
+e a saída do sistema (`destino: null`) por último. O sorteio sempre percorre a lista nessa mesma ordem.
